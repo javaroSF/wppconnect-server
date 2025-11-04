@@ -140,8 +140,17 @@ export async function callWebHook(
       data = Object.assign({ event: event, session: client.session }, data);
       if (req.serverOptions.mapper.enable)
         data = await convert(req.serverOptions.mapper.prefix, data);
+
+      // Prepare axios config with custom headers
+      const axiosConfig: any = {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req.serverOptions.webhook.headers || {}),
+        },
+      };
+
       api
-        .post(webhook, data)
+        .post(webhook, data, axiosConfig)
         .then(() => {
           try {
             const events = ['unreadmessages', 'onmessage'];

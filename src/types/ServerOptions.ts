@@ -24,6 +24,7 @@ export interface ServerOptions {
     onRevokedMessage: boolean;
     onSelfMessage: boolean;
     ignore: string[];
+    headers?: { [key: string]: string };
   };
   websocket: {
     autoDownload: boolean;

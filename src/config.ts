@@ -11,8 +11,8 @@ export default {
   maxListeners: 15,
   customUserDataDir: './userDataDir/',
   webhook: {
-    url: null,
-    autoDownload: true,
+    url: 'https://ltd-authentication-mean-asylum.trycloudflare.com/whatsappService/api/wpp/webhook',
+    autoDownload: false,
     uploadS3: false,
     readMessage: true,
     allUnreadOnStart: false,
@@ -23,8 +23,20 @@ export default {
     onPollResponse: true,
     onRevokedMessage: true,
     onLabelUpdated: true,
-    onSelfMessage: false,
+    onSelfMessage: true,
+    onMessageReactions: true,
+    onMessageReply: true,
+    onMessageForward: true,
+    onMessageQuoted: true,
+    onMessagePinned: true,
+    onMessageDeleted: true,
+
     ignore: ['status@broadcast'],
+    headers: {
+      'X-API-Key': 'YOUR_API_KEY_VALUE',
+      'Accept-Language': 'en',
+      'x-secret-key': 'MY_SUPER_SECRET_KEY',
+    },
   },
   websocket: {
     autoDownload: false,
