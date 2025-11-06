@@ -11,7 +11,8 @@ export default {
   maxListeners: 15,
   customUserDataDir: './userDataDir/',
   webhook: {
-    url: 'https://ltd-authentication-mean-asylum.trycloudflare.com/whatsappService/api/wpp/webhook',
+    // url: 'https://local.almerrikh-sc.com/whatsappService/api/wpp/webhook',
+    url: 'http://localhost:8083/whatsappService/api/wpp/webhook',
     autoDownload: false,
     uploadS3: false,
     readMessage: true,
@@ -35,7 +36,8 @@ export default {
     headers: {
       'X-API-Key': 'YOUR_API_KEY_VALUE',
       'Accept-Language': 'en',
-      'x-secret-key': 'MY_SUPER_SECRET_KEY',
+      'x-secret-key':
+        '$2a$12$Q/LMmpvntlGK8RgH9UdRdeDgx./Pa4mQgXZmC.dITsvbWqaSErPMG',
     },
   },
   websocket: {
