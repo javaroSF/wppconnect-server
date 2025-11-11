@@ -10,6 +10,9 @@ export interface ServerOptions {
   tokenStoreType: string;
   maxListeners: number;
   customUserDataDir: string;
+  sessionTimeoutMs?: number;
+  disableSpins?: boolean;
+  disableWelcome?: boolean;
   webhook: {
     url: string;
     autoDownload: boolean;
@@ -41,6 +44,13 @@ export interface ServerOptions {
   };
   createOptions: {
     browserArgs: string[];
+    whatsappVersion?: string;
+    puppeteerOptions?: {
+      headless?: boolean;
+      defaultViewport?: null;
+      args?: string[];
+    };
+    linkPreviewApiServers?: string[] | null;
   };
   mapper: {
     enable: boolean;
