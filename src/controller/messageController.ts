@@ -17,6 +17,10 @@
 import { Request, Response } from 'express';
 
 import { unlinkAsync } from '../util/functions';
+import {
+  sendMessageWithLidRetry,
+  formatContactForLid,
+} from '../util/lidHelper';
 
 function returnError(req: Request, res: Response, error: any) {
   req.logger.error(error);
@@ -90,14 +94,43 @@ export async function sendMessage(req: Request, res: Response) {
       }
      }
    */
-  const { phone, message } = req.body;
+  const { phone, message, isLid } = req.body;
 
   const options = req.body.options || {};
 
   try {
     const results: any = [];
     for (const contato of phone) {
-      results.push(await req.client.sendText(contato, message, options));
+      try {
+        // Format contact properly for LID support
+        const formattedContact = formatContactForLid(contato, isLid || false);
+
+        // Use retry mechanism for LID-related issues
+        const result = await sendMessageWithLidRetry(
+          async (to: string, msg: string, opts: any) => {
+            return await req.client.sendText(to, msg, opts);
+          },
+          formattedContact,
+          message,
+          options
+        );
+
+        results.push(result);
+      } catch (contactError) {
+        const errorMessage =
+          contactError instanceof Error
+            ? contactError.message
+            : 'Unknown error';
+        req.logger.warn(
+          `Failed to send message to ${contato}: ${errorMessage}`
+        );
+        // Continue with other contacts even if one fails
+        results.push({
+          error: true,
+          contact: contato,
+          message: errorMessage,
+        });
+      }
     }
 
     if (results.length === 0) res.status(400).json('Error sending message');

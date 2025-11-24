@@ -159,7 +159,15 @@ export async function callWebHook(
           } catch (e) {}
         })
         .catch((e) => {
-          req.logger.warn('Error calling Webhook.', e);
+          const errorDetails = {
+            webhook,
+            event,
+            status: e.response?.status,
+            statusText: e.response?.statusText,
+            responseData: e.response?.data,
+            message: e.message,
+          };
+          req.logger.warn('Error calling Webhook.', errorDetails, e.name);
         });
     } catch (e) {
       req.logger.error(e);
