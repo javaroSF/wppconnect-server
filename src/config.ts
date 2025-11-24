@@ -10,9 +10,15 @@ export default {
   tokenStoreType: 'file',
   maxListeners: 15,
   customUserDataDir: './userDataDir/',
+  // Session management options to help with LID compatibility
+  sessionTimeoutMs: 30000,
+  disableSpins: true,
+  disableWelcome: true,
   webhook: {
-    // url: 'https://local.almerrikh-sc.com/whatsappService/api/wpp/webhook',
-    url: 'http://localhost:8083/whatsappService/api/wpp/webhook',
+    // Use port 8087 for more reliable webhook testing
+    url: 'http://localhost:8087/whatsappService/api/wpp/webhook',
+    // Backup option: you can also use webhook.site for testing
+    // url: 'https://webhook.site/your-unique-id',
     autoDownload: false,
     uploadS3: false,
     readMessage: true,
@@ -82,7 +88,31 @@ export default {
       '--ignore-certificate-errors',
       '--ignore-ssl-errors',
       '--ignore-certificate-errors-spki-list',
+      // Additional arguments to help with LID and WhatsApp Web compatibility
+      '--disable-features=VizDisplayCompositor',
+      '--disable-blink-features=AutomationControlled',
+      '--no-default-browser-check',
+      '--disable-dev-tools',
+      '--disable-infobars',
+      '--disable-notifications',
+      '--disable-popup-blocking',
+      '--disable-prompt-on-repost',
+      '--disable-hang-monitor',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-background-timer-throttling',
     ],
+    // LID support configuration
+    whatsappVersion: 'latest',
+    puppeteerOptions: {
+      headless: true,
+      defaultViewport: null,
+      args: [
+        '--disable-features=VizDisplayCompositor',
+        '--no-default-browser-check',
+        '--disable-dev-tools',
+      ],
+    },
     /**
      * Example of configuring the linkPreview generator
      * If you set this to 'null', it will use global servers; however, you have the option to define your own server
