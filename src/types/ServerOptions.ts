@@ -1,4 +1,5 @@
 import { BucketLocationConstraint } from '@aws-sdk/client-s3';
+import { CreateConfig } from '@wppconnect-team/wppconnect';
 
 export interface ServerOptions {
   secretKey: string;
@@ -42,16 +43,7 @@ export interface ServerOptions {
     level: string;
     logger: string[];
   };
-  createOptions: {
-    browserArgs: string[];
-    whatsappVersion?: string;
-    puppeteerOptions?: {
-      headless?: boolean;
-      defaultViewport?: null;
-      args?: string[];
-    };
-    linkPreviewApiServers?: string[] | null;
-  };
+  createOptions: CreateConfig;
   mapper: {
     enable: boolean;
     prefix: string;
