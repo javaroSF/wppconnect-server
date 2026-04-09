@@ -11,19 +11,19 @@ RUN apk update && \
     make \
     libc6-compat \
     && rm -rf /var/cache/apk/*
-RUN yarn install --production --pure-lockfile && \
+RUN corepack enable && \
+    yarn install --production && \
     yarn add sharp --ignore-engines && \
     yarn cache clean
 
 FROM base AS build
 WORKDIR /usr/src/wpp-server
 COPY . .
-RUN yarn build
+RUN corepack enable && yarn build
 
 FROM base
 WORKDIR /usr/src/wpp-server/
 RUN apk add --no-cache chromium
-RUN yarn cache clean
 COPY . .
 COPY --from=build /usr/src/wpp-server/ /usr/src/wpp-server/
 EXPOSE 21465
