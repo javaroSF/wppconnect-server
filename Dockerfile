@@ -18,7 +18,7 @@ RUN yarn install --production --pure-lockfile && \
 FROM base AS build
 WORKDIR /usr/src/wpp-server
 COPY . .
-RUN yarn build
+RUN NODE_ENV=development yarn install && yarn build
 
 FROM base
 WORKDIR /usr/src/wpp-server/
