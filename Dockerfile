@@ -11,15 +11,14 @@ RUN apk update && \
     make \
     libc6-compat \
     && rm -rf /var/cache/apk/*
-RUN corepack enable && \
-    yarn install --production && \
+RUN yarn install --production --pure-lockfile && \
     yarn add sharp --ignore-engines && \
     yarn cache clean
 
 FROM base AS build
 WORKDIR /usr/src/wpp-server
 COPY . .
-RUN corepack enable && yarn build
+RUN yarn build
 
 FROM base
 WORKDIR /usr/src/wpp-server/
