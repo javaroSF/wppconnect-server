@@ -16,8 +16,8 @@ export default {
   disableWelcome: true,
   webhook: {
     // Use port 8087 for more reliable webhook testing
-    url: 'http://192.168.1.5:8083/whatsappService/api/wpp/webhook',
-    // url: 'http://157.180.31.251:8083/whatsappService/api/wpp/webhook',
+    // url: 'http://192.168.1.5:8083/whatsappService/api/wpp/webhook',
+    url: 'http://157.180.31.251:8083/whatsappService/api/wpp/webhook',
     // Backup option: you can also use webhook.site for testing
     // url: 'https://webhook.site/your-unique-id',
     autoDownload: false,
