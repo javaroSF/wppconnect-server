@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 
 services:
   wppconnect:
@@ -10,7 +10,14 @@ services:
       - ./config.ts:/usr/src/wpp-server/config.ts
       - ./wppconnect_tokens:/usr/src/wpp-server/tokens
     ports:
-      - "21465:21465"
+      - '21465:21465'
+    networks:
+      - default
+      - whatsapp-docker-network
 
 volumes:
-  wppconnect_tokens: {}      
+  wppconnect_tokens: {}
+
+networks:
+  whatsapp-docker-network:
+    external: true
