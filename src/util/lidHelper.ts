@@ -6,9 +6,8 @@
  * Check if a contact ID appears to be a LID format
  */
 export function isLidFormat(contactId: string): boolean {
-  // LID format is typically longer than 14 characters
-  // or contains specific patterns indicating it's a Local ID
-  return contactId.length > 14 || contactId.includes('@lid');
+  // LID format contains @lid suffix
+  return contactId.includes('@lid');
 }
 
 /**
@@ -38,13 +37,6 @@ export function prepareLidMessageOptions(to: string, options: any = {}) {
 
   return {
     ...options,
-    // Add LID-specific options if needed
-    allowLid: isLidContact,
-    // Ensure proper contact format
-    to: formatContactForLid(to, isLidContact),
-    // Additional options for LID compatibility
-    waitForAck: true,
-    createChat: true,
   };
 }
 
@@ -101,7 +93,7 @@ export async function sendMessageWithLidRetry(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const messageOptions = prepareLidMessageOptions(currentTo, options);
-      return await sendFunction(messageOptions.to, message, messageOptions);
+      return await sendFunction(currentTo, message, messageOptions);
     } catch (error) {
       lastError = error as Error;
       const retryInfo = handleLidError(lastError, currentTo);

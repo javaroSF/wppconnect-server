@@ -42,15 +42,18 @@ export default async function statusConnection(
           console.log(contact);
           const profile: any = await req.client
             .checkNumberStatus(contact)
-            .catch((error) => console.log(error));
-          if (!profile?.numberExists) {
+            .catch((error) => {
+              console.log(error);
+              return undefined;
+            });
+          if (profile !== undefined && profile.numberExists === false) {
             const num = (contact as any).split('@')[0];
-            res.status(400).json({
+            return res.status(400).json({
               response: null,
               status: 'Connected',
               message: `O número ${num} não existe.`,
             });
-          } else {
+          } else if (profile?.id?._serialized) {
             if ((numbers as any).indexOf(profile.id._serialized) < 0) {
               (numbers as any).push(profile.id._serialized);
             }
@@ -60,6 +63,7 @@ export default async function statusConnection(
         index++;
       }
       req.body.phone = localArr;
+      next();
     } else {
       res.status(404).json({
         response: null,
@@ -67,7 +71,6 @@ export default async function statusConnection(
         message: 'A sessão do WhatsApp não está ativa.',
       });
     }
-    next();
   } catch (error) {
     req.logger.error(error);
     res.status(404).json({
