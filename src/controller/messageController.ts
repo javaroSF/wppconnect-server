@@ -108,7 +108,26 @@ export async function sendMessage(req: Request, res: Response) {
         // Use retry mechanism for LID-related issues
         const result = await sendMessageWithLidRetry(
           async (to: string, msg: string, opts: any) => {
-            return await req.client.sendText(to, msg, opts);
+            try {
+              return await req.client.sendText(to, msg, opts);
+            } catch (err: any) {
+              // If WhatsApp requires LID for this contact, resolve and retry
+              if (
+                err.message?.toLowerCase().includes('no lid for user') &&
+                !to.includes('@lid')
+              ) {
+                try {
+                  const lidEntry = await req.client.getPnLidEntry(to);
+                  const lid = lidEntry?.lid?._serialized ?? lidEntry?.lid;
+                  if (lid) {
+                    return await req.client.sendText(lid, msg, opts);
+                  }
+                } catch {
+                  // LID resolution failed, fall through to throw original error
+                }
+              }
+              throw err;
+            }
           },
           formattedContact,
           message,
