@@ -118,7 +118,7 @@ export async function sendMessage(req: Request, res: Response) {
               ) {
                 try {
                   const lidEntry = await req.client.getPnLidEntry(to);
-                  const lid = lidEntry?.lid?._serialized ?? lidEntry?.lid;
+                  const lid = lidEntry?.lid?._serialized;
                   if (lid) {
                     return await req.client.sendText(lid, msg, opts);
                   }
