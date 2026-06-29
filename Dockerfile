@@ -11,9 +11,20 @@ RUN apk update && \
     make \
     libc6-compat \
     && rm -rf /var/cache/apk/*
-RUN yarn install --production --pure-lockfile && \
-    yarn add sharp --ignore-engines && \
-    yarn cache clean
+
+# To make sure yarn 4 uses node-modules linker
+COPY .yarnrc.yml ./
+
+# Copy only package.json to leverage Docker cache
+COPY package.json ./
+COPY yarn.lock ./
+
+# Enable corepack and prepare yarn 4.14.1
+RUN corepack enable && \
+    corepack prepare yarn@4.14.1 --activate
+
+# Install dependencies with immutable lockfile
+RUN yarn install --immutable
 
 FROM base AS build
 WORKDIR /usr/src/wpp-server
