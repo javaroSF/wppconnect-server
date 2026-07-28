@@ -33,8 +33,6 @@ export function formatContactForLid(
  * Prepare message options with LID support
  */
 export function prepareLidMessageOptions(to: string, options: any = {}) {
-  const isLidContact = isLidFormat(to);
-
   return {
     ...options,
   };

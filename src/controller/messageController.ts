@@ -18,8 +18,8 @@ import { Request, Response } from 'express';
 
 import { unlinkAsync } from '../util/functions';
 import {
-  sendMessageWithLidRetry,
   formatContactForLid,
+  sendMessageWithLidRetry,
 } from '../util/lidHelper';
 
 function returnError(req: Request, res: Response, error: any) {
