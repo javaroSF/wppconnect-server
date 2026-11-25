@@ -18,7 +18,7 @@ services:
       TOKEN_STORE_PATH: '${TOKEN_STORE_PATH:-./tokens}'
       CUSTOM_USER_DATA_DIR: '${CUSTOM_USER_DATA_DIR:-./userDataDir/}'
       MAX_LISTENERS: '${MAX_LISTENERS:-15}'
-      PUPPETEER_EXECUTABLE_PATH: '${PUPPETEER_EXECUTABLE_PATH:-}'
+      PUPPETEER_EXECUTABLE_PATH: '${PUPPETEER_EXECUTABLE_PATH:-/usr/bin/chromium-browser}'
       WHATSAPP_VERSION: '${WHATSAPP_VERSION:-2.3000.1049703040-alpha}'
     volumes:
       - ./config.ts:/usr/src/wpp-server/config.ts

@@ -32,7 +32,14 @@ export interface ServerOptions {
     onReactionMessage: boolean;
     onPollResponse: boolean;
     onRevokedMessage: boolean;
+    onLabelUpdated: boolean;
     onSelfMessage: boolean;
+    onMessageReactions: boolean;
+    onMessageReply: boolean;
+    onMessageForward: boolean;
+    onMessageQuoted: boolean;
+    onMessagePinned: boolean;
+    onMessageDeleted: boolean;
     ignore: string[];
     headers?: { [key: string]: string };
   };

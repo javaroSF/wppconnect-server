@@ -14,6 +14,7 @@ userDataDir
 .flowz-compat
 graphify-out
 manager
+backups
 
 .env
 .env.*

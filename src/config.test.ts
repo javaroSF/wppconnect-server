@@ -29,6 +29,14 @@ beforeEach(() => {
   delete process.env.PORT;
   delete process.env.MAX_LISTENERS;
   delete process.env.CHATWOOT_ALLOWED_URLS;
+  delete process.env.WEBHOOK_URL;
+  delete process.env.WEBHOOK_HEADERS_JSON;
+  delete process.env.WEBHOOK_ALLOWED_URLS;
+  delete process.env.WEBHOOK_RETRY_ATTEMPTS;
+  delete process.env.WEBHOOK_RETRY_DELAY;
+  delete process.env.WEBHOOK_REQUEST_TIMEOUT;
+  delete process.env.PUPPETEER_EXECUTABLE_PATH;
+  delete process.env.WHATSAPP_VERSION;
   jest.resetModules();
 });
 
@@ -81,4 +89,40 @@ it('loads Chatwoot destinations only from operator configuration', async () => {
     'https://support.example.test',
     'http://localhost:3000/',
   ]);
+});
+
+it('preserves Flowz webhook listeners and loads webhook credentials from environment', async () => {
+  process.env.WEBHOOK_URL = 'https://flowz.example.test/wpp/webhook';
+  process.env.WEBHOOK_HEADERS_JSON =
+    '{"Authorization":"Bearer test-flowz-webhook-token"}';
+  process.env.WEBHOOK_ALLOWED_URLS = 'https://flowz.example.test';
+  process.env.WEBHOOK_RETRY_ATTEMPTS = '4';
+  process.env.WEBHOOK_RETRY_DELAY = '7000';
+  process.env.WEBHOOK_REQUEST_TIMEOUT = '45000';
+  const { default: config } = await import('./config');
+
+  expect(config.webhook).toEqual(
+    expect.objectContaining({
+      url: 'https://flowz.example.test/wpp/webhook',
+      headers: { Authorization: 'Bearer test-flowz-webhook-token' },
+      allowedUrls: ['https://flowz.example.test'],
+      retryAttempts: 4,
+      retryDelay: 7000,
+      requestTimeout: 45000,
+      listenAcks: true,
+      onPresenceChanged: true,
+      onParticipantsChanged: true,
+      onReactionMessage: true,
+      onPollResponse: true,
+      onRevokedMessage: true,
+      onLabelUpdated: true,
+      onSelfMessage: true,
+      onMessageReactions: true,
+      onMessageReply: true,
+      onMessageForward: true,
+      onMessageQuoted: true,
+      onMessagePinned: true,
+      onMessageDeleted: true,
+    })
+  );
 });

@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import path from 'path';
+
 import CreateSessionUtil from '../../util/createSessionUtil';
 import { clientsArray } from '../../util/sessionUtil';
 
@@ -100,7 +102,7 @@ describe('CreateSessionUtil initialization ownership', () => {
         setToken: jest.fn(),
       }),
     }));
-    const req = {
+    const req: any = {
       body: {},
       serverOptions: { createOptions: {}, webhook: {} },
       logger: { info: jest.fn(), error: jest.fn() },
@@ -122,6 +124,35 @@ describe('CreateSessionUtil initialization ownership', () => {
     expect((clientsArray as any).stale.status).toBe('CLOSED');
     await util.createSessionUtil(req, clientsArray, 'stale');
     expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it('preserves existing Puppeteer options when assigning a session profile', async () => {
+    const { create, req, util } = setup();
+    req.serverOptions = {
+      createOptions: {
+        puppeteerOptions: {
+          executablePath: '/usr/bin/chromium-browser',
+          args: ['--existing-browser-flag'],
+          headless: true,
+        },
+      },
+      customUserDataDir: '/srv/wpp/userDataDir',
+      webhook: {},
+    };
+    create.mockRejectedValue(new Error('Browser startup failed'));
+
+    await util.createSessionUtil(req, clientsArray, 'stale');
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        puppeteerOptions: expect.objectContaining({
+          executablePath: '/usr/bin/chromium-browser',
+          args: ['--existing-browser-flag'],
+          headless: true,
+          userDataDir: path.resolve('/srv/wpp/userDataDir', 'stale'),
+        }),
+      })
+    );
   });
 
   it('closes a late client and preserves a replacement after cancellation', async () => {

@@ -98,6 +98,7 @@ export default class CreateSessionUtil {
 
       if (req.serverOptions.customUserDataDir) {
         req.serverOptions.createOptions.puppeteerOptions = {
+          ...req.serverOptions.createOptions.puppeteerOptions,
           userDataDir: path.resolve(
             req.serverOptions.customUserDataDir,
             session
