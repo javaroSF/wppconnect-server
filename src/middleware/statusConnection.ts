@@ -18,62 +18,94 @@ import { NextFunction, Request, Response } from 'express';
 
 import { contactToArray } from '../util/functions';
 
+function requestRecipients(phone: unknown): string[] {
+  if (Array.isArray(phone)) return phone.map((recipient) => String(recipient));
+  if (typeof phone === 'string') return phone.split(/[,;]/).map(String);
+  return [];
+}
+
 export default async function statusConnection(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    const numbers: any = [];
+    // Resolved ids keyed by the contact that was requested, so a repeated
+    // recipient in one bulk request costs a single browser round-trip.
+    const resolved = new Map<string, string>();
     if (req.client && req.client.isConnected) {
       await req.client.isConnected();
 
+      const originalRecipients = requestRecipients(req.body.phone);
       const localArr = contactToArray(
         req.body.phone || [],
         req.body.isGroup,
         req.body.isNewsletter,
         req.body.isLid
       );
+      const recipientSendTrace = localArr.map((normalizedRecipient, index) => ({
+        originalRecipient:
+          originalRecipients[index]?.trim() || normalizedRecipient,
+        normalizedRecipient,
+        isLidExplicitlySupplied:
+          Boolean(req.body.isLid) ||
+          originalRecipients[index]?.includes('@lid'),
+      }));
+      req.recipientSendTrace = recipientSendTrace;
       let index = 0;
       for (const contact of localArr) {
         if (req.body.isGroup || req.body.isNewsletter) {
           localArr[index] = contact;
-        } else if (numbers.indexOf(contact) < 0) {
-          console.log(contact);
-          const profile: any = await req.client
-            .checkNumberStatus(contact)
-            .catch((error) => {
-              console.log(error);
-              return undefined;
+        } else if (resolved.has(contact)) {
+          // Reuse the canonical id for another occurrence in this request.
+          (localArr as any)[index] = resolved.get(contact);
+        } else {
+          let profile: any;
+          try {
+            profile = await req.client.checkNumberStatus(contact);
+          } catch (error) {
+            // A failed lookup is not proof that the number is missing: the
+            // browser context can be destroyed mid-call. Reporting "não
+            // existe" here sends callers looking for a typo that is not there.
+            req.logger.error(error);
+            return res.status(502).json({
+              response: null,
+              status: 'Connected',
+              message: 'Não foi possível consultar o número.',
             });
-          if (profile !== undefined && profile.numberExists === false) {
+          }
+          if (!profile?.numberExists) {
             const num = (contact as any).split('@')[0];
             return res.status(400).json({
               response: null,
               status: 'Connected',
               message: `O número ${num} não existe.`,
             });
-          } else if (profile?.id?._serialized) {
-            if ((numbers as any).indexOf(profile.id._serialized) < 0) {
-              (numbers as any).push(profile.id._serialized);
-            }
+          } else {
+            // Key the cache by the contact that was asked about. checkNumberStatus
+            // returns the canonical id, which can differ from the requested one,
+            // so comparing against the returned id never matched the next
+            // identical request.
+            resolved.set(contact, profile.id._serialized);
             (localArr as any)[index] = profile.id._serialized;
+            recipientSendTrace[index].resolvedRecipient =
+              profile.id._serialized;
           }
         }
         index++;
       }
       req.body.phone = localArr;
-      next();
     } else {
-      res.status(404).json({
+      return res.status(404).json({
         response: null,
         status: 'Disconnected',
         message: 'A sessão do WhatsApp não está ativa.',
       });
     }
+    return next();
   } catch (error) {
     req.logger.error(error);
-    res.status(404).json({
+    return res.status(404).json({
       response: null,
       status: 'Disconnected',
       message: 'A sessão do WhatsApp não está ativa.',

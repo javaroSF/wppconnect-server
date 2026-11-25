@@ -100,17 +100,54 @@ export async function sendMessage(req: Request, res: Response) {
 
   try {
     const results: any = [];
-    for (const contato of phone) {
+    for (const [index, contato] of phone.entries()) {
       try {
         // Format contact properly for LID support
         const formattedContact = formatContactForLid(contato, isLid || false);
+        const trace = req.recipientSendTrace?.[index];
+        let sendAttempt = 0;
+
+        const logSend = (event: string, details: Record<string, unknown>) => {
+          req.logger.info(event, {
+            originalRecipient: trace?.originalRecipient || contato,
+            normalizedRecipient: trace?.normalizedRecipient || contato,
+            resolvedRecipient: trace?.resolvedRecipient,
+            formattedRecipient: formattedContact,
+            isLidExplicitlySupplied:
+              trace?.isLidExplicitlySupplied || Boolean(isLid),
+            phoneType: typeof req.body.phone,
+            phoneIsArray: Array.isArray(req.body.phone),
+            ...details,
+          });
+        };
 
         // Use retry mechanism for LID-related issues
         const result = await sendMessageWithLidRetry(
           async (to: string, msg: string, opts: any) => {
+            const attempt = ++sendAttempt;
+            const startedAt = Date.now();
+            logSend('Message send attempt', { attempt, identifierUsed: to });
             try {
-              return await req.client.sendText(to, msg, opts);
+              const sent = await req.client.sendText(to, msg, opts);
+              logSend('Message send result', {
+                attempt,
+                identifierUsed: to,
+                durationMs: Date.now() - startedAt,
+                id: sent?.id,
+                ack: sent?.ack,
+                isSendFailure: (sent as any)?.isSendFailure,
+                chatId: sent?.chatId,
+                to: sent?.to,
+              });
+              return sent;
             } catch (err: any) {
+              logSend('Message send failure', {
+                attempt,
+                identifierUsed: to,
+                durationMs: Date.now() - startedAt,
+                error: err?.message || String(err),
+                stack: err?.stack,
+              });
               // If WhatsApp requires LID for this contact, resolve and retry
               if (
                 err.message?.toLowerCase().includes('no lid for user') &&
@@ -119,10 +156,38 @@ export async function sendMessage(req: Request, res: Response) {
                 try {
                   const lidEntry = await req.client.getPnLidEntry(to);
                   const lid = lidEntry?.lid?._serialized;
+                  logSend('PN to LID resolution result', {
+                    attempt,
+                    identifierUsed: to,
+                    resolvedLid: lid,
+                  });
                   if (lid) {
-                    return await req.client.sendText(lid, msg, opts);
+                    const fallbackAttempt = ++sendAttempt;
+                    const fallbackStartedAt = Date.now();
+                    logSend('Message send LID fallback attempt', {
+                      attempt: fallbackAttempt,
+                      identifierUsed: lid,
+                    });
+                    const sent = await req.client.sendText(lid, msg, opts);
+                    logSend('Message send LID fallback result', {
+                      attempt: fallbackAttempt,
+                      identifierUsed: lid,
+                      durationMs: Date.now() - fallbackStartedAt,
+                      id: sent?.id,
+                      ack: sent?.ack,
+                      isSendFailure: (sent as any)?.isSendFailure,
+                      chatId: sent?.chatId,
+                      to: sent?.to,
+                    });
+                    return sent;
                   }
-                } catch {
+                } catch (resolutionError: any) {
+                  logSend('PN to LID resolution failure', {
+                    attempt,
+                    identifierUsed: to,
+                    error: resolutionError?.message || String(resolutionError),
+                    stack: resolutionError?.stack,
+                  });
                   // LID resolution failed, fall through to throw original error
                 }
               }
@@ -263,7 +328,7 @@ export async function sendFile(req: Request, res: Response) {
   const options = req.body.options || {};
 
   if (!path && !req.file && !base64)
-    res.status(401).send({
+    return res.status(401).send({
       message: 'Sending the file is mandatory',
     });
 
@@ -739,7 +804,7 @@ export async function sendOrderMessage(req: Request, res: Response) {
     }
 
     if (results.length === 0)
-      res.status(400).json('Error sending order message');
+      return res.status(400).json('Error sending order message');
     req.io.emit('mensagem-enviada', results);
     returnSucess(res, results);
   } catch (error) {
@@ -1011,7 +1076,7 @@ export async function sendImageAsSticker(req: Request, res: Response) {
   const { phone, path } = req.body;
 
   if (!path && !req.file)
-    res.status(401).send({
+    return res.status(401).send({
       message: 'Sending the file is mandatory',
     });
 
@@ -1069,7 +1134,7 @@ export async function sendImageAsStickerGif(req: Request, res: Response) {
   const { phone, path } = req.body;
 
   if (!path && !req.file)
-    res.status(401).send({
+    return res.status(401).send({
       message: 'Sending the file is mandatory',
     });
 

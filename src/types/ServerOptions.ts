@@ -9,6 +9,7 @@ export interface ServerOptions {
   poweredBy: string;
   startAllSession: boolean;
   tokenStoreType: string;
+  tokenStorePath?: string;
   maxListeners: number;
   customUserDataDir: string;
   sessionTimeoutMs?: number;
@@ -16,7 +17,12 @@ export interface ServerOptions {
   disableWelcome?: boolean;
   webhook: {
     url: string;
+    allowedUrls?: string[];
     autoDownload: boolean;
+    retryAttempts?: number;
+    retryDelay?: number;
+    requestTimeout?: number;
+    autoDownloadMaxSize?: number;
     uploadS3: boolean;
     readMessage: boolean;
     allUnreadOnStart: boolean;
@@ -33,6 +39,11 @@ export interface ServerOptions {
   websocket: {
     autoDownload: boolean;
     uploadS3: boolean;
+  };
+  chatwoot?: {
+    allowedUrls?: string[];
+    sendQrCode?: boolean;
+    sendStatus?: boolean;
   };
   archive: {
     enable: boolean;

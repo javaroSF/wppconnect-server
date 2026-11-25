@@ -1,8 +1,15 @@
 import { Whatsapp } from '@wppconnect-team/wppconnect';
-import { Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { Logger } from 'winston';
 
 import { ServerOptions } from '../ServerOptions';
+
+export interface RecipientSendTrace {
+  originalRecipient: string;
+  normalizedRecipient: string;
+  resolvedRecipient?: string;
+  isLidExplicitlySupplied: boolean;
+}
 
 // to make the file a module and avoid the TypeScript error
 export {};
@@ -14,8 +21,9 @@ declare global {
       logger: Logger;
       session: string;
       token?: string;
-      io: Socket;
+      io: Server;
       serverOptions: ServerOptions;
+      recipientSendTrace?: RecipientSendTrace[];
     }
   }
 }

@@ -18,8 +18,17 @@
 *.zip
 /.idea
 userDataDir
+/.flowz-dev
+/.flowz-compat
 /yarn-error.log
 .yarn/install-state.gz
 backupFolder
 tokens/*
 wppconnect_tokens/*
+.env
+.env.*
+!.env.example
+!vendor/deepmerge-4.3.2+wppconnect.1.tgz
+
+!vendor/wppconnect-minimatch-legacy-compat-*.tgz
+.DS_Store

@@ -17,11 +17,12 @@ export function formatContactForLid(
   contactId: string,
   forceLid: boolean = false
 ): string {
+  const hasExplicitLid = isLidFormat(contactId);
   // Remove any existing suffixes
   const cleanId = contactId.replace(/@c\.us|@lid/g, '');
 
   // If forcing LID or contact appears to be LID format
-  if (forceLid || isLidFormat(cleanId)) {
+  if (forceLid || hasExplicitLid) {
     return `${cleanId}@lid`;
   }
 

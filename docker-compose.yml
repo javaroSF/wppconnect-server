@@ -6,9 +6,24 @@ services:
     restart: unless-stopped
     build:
       context: .
+    environment:
+      SECRET_KEY: '${SECRET_KEY:-THISISMYSECURETOKEN}'
+      WEBHOOK_URL: '${WEBHOOK_URL:-}'
+      WEBHOOK_HEADERS_JSON: '${WEBHOOK_HEADERS_JSON:-{}}'
+      WEBHOOK_ALLOWED_URLS: '${WEBHOOK_ALLOWED_URLS:-}'
+      WEBHOOK_RETRY_ATTEMPTS: '${WEBHOOK_RETRY_ATTEMPTS:-3}'
+      WEBHOOK_RETRY_DELAY: '${WEBHOOK_RETRY_DELAY:-5000}'
+      WEBHOOK_REQUEST_TIMEOUT: '${WEBHOOK_REQUEST_TIMEOUT:-30000}'
+      TOKEN_STORE_TYPE: '${TOKEN_STORE_TYPE:-file}'
+      TOKEN_STORE_PATH: '${TOKEN_STORE_PATH:-./tokens}'
+      CUSTOM_USER_DATA_DIR: '${CUSTOM_USER_DATA_DIR:-./userDataDir/}'
+      MAX_LISTENERS: '${MAX_LISTENERS:-15}'
+      PUPPETEER_EXECUTABLE_PATH: '${PUPPETEER_EXECUTABLE_PATH:-}'
+      WHATSAPP_VERSION: '${WHATSAPP_VERSION:-2.3000.1049703040-alpha}'
     volumes:
       - ./config.ts:/usr/src/wpp-server/config.ts
       - ./wppconnect_tokens:/usr/src/wpp-server/tokens
+      - ./userDataDir:/usr/src/wpp-server/userDataDir
     ports:
       - '21465:21465'
     networks:

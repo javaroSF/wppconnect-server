@@ -1,27 +1,64 @@
+import dotenv from 'dotenv';
+
 import { ServerOptions } from './types/ServerOptions';
 
+// Loading is optional; deployment environment variables keep precedence.
+dotenv.config({ override: false });
+const env = process.env;
+
+function envNumber(name: string, fallback: number): number {
+  const value = env[name];
+  if (!value) return fallback;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function envJsonHeaders(name: string): Record<string, string> {
+  const value = env[name];
+  if (!value) return {};
+
+  try {
+    const parsed = JSON.parse(value);
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      !Array.isArray(parsed) &&
+      Object.values(parsed).every((header) => typeof header === 'string')
+    )
+      return parsed as Record<string, string>;
+  } catch {
+    // Invalid local configuration must not prevent the server from starting.
+  }
+  return {};
+}
+
 export default {
-  secretKey: 'THISISMYSECURETOKEN',
-  host: 'http://localhost',
-  port: '21465',
+  secretKey: env.SECRET_KEY || 'THISISMYSECURETOKEN',
+  host: env.HOST || 'http://localhost',
+  port: env.PORT || '21465',
   deviceName: 'WppConnect',
   poweredBy: 'WPPConnect-Server',
   startAllSession: true,
-  tokenStoreType: 'file',
-  maxListeners: 15,
-  customUserDataDir: './userDataDir/',
-  // Session management options to help with LID compatibility
+  tokenStoreType: env.TOKEN_STORE_TYPE || 'file',
+  tokenStorePath: env.TOKEN_STORE_PATH || './.flowz-dev/tokens',
+  maxListeners: envNumber('MAX_LISTENERS', 15),
+  customUserDataDir: env.CUSTOM_USER_DATA_DIR || './.flowz-dev/userDataDir/',
   sessionTimeoutMs: 30000,
   disableSpins: true,
   disableWelcome: true,
   webhook: {
-    // Use port 8087 for more reliable webhook testing
-    // url: 'http://192.168.1.5:8083/whatsappService/api/wpp/webhook',
-    // url: 'http://157.180.31.251:8083/whatsappService/api/wpp/webhook',
-    url: 'https://flowz-api.binarieslabs.com/api/wpp/webhook',
-    // Backup option: you can also use webhook.site for testing
-    // url: 'https://webhook.site/your-unique-id',
+    url: env.WEBHOOK_URL || null,
+    allowedUrls: (env.WEBHOOK_ALLOWED_URLS || '')
+      .split(',')
+      .map((url) => url.trim())
+      .filter(Boolean),
     autoDownload: false,
+    retryAttempts: envNumber('WEBHOOK_RETRY_ATTEMPTS', 3),
+    retryDelay: envNumber('WEBHOOK_RETRY_DELAY', 5000),
+    requestTimeout: envNumber('WEBHOOK_REQUEST_TIMEOUT', 30000),
+    // Bytes; media larger than this is not inlined as base64 (0 = no limit).
+    autoDownloadMaxSize: envNumber('WEBHOOK_AUTO_DOWNLOAD_MAX_SIZE', 0),
     uploadS3: false,
     readMessage: true,
     allUnreadOnStart: false,
@@ -33,26 +70,18 @@ export default {
     onRevokedMessage: true,
     onLabelUpdated: true,
     onSelfMessage: true,
-    onMessageReactions: true,
-    onMessageReply: true,
-    onMessageForward: true,
-    onMessageQuoted: true,
-    onMessagePinned: true,
-    onMessageDeleted: true,
-
     ignore: ['status@broadcast'],
-    headers: {
-      'X-API-Key': 'YOUR_API_KEY_VALUE',
-      'Accept-Language': 'en',
-      'x-secret-key':
-        '$2a$12$Q/LMmpvntlGK8RgH9UdRdeDgx./Pa4mQgXZmC.dITsvbWqaSErPMG',
-    },
+    headers: envJsonHeaders('WEBHOOK_HEADERS_JSON'),
   },
   websocket: {
     autoDownload: false,
     uploadS3: false,
   },
   chatwoot: {
+    allowedUrls: (env.CHATWOOT_ALLOWED_URLS || '')
+      .split(',')
+      .map((url) => url.trim())
+      .filter(Boolean),
     sendQrCode: true,
     sendStatus: true,
   },
@@ -90,7 +119,6 @@ export default {
       '--ignore-certificate-errors',
       '--ignore-ssl-errors',
       '--ignore-certificate-errors-spki-list',
-      // Additional arguments to help with LID and WhatsApp Web compatibility
       '--disable-features=VizDisplayCompositor',
       '--disable-blink-features=AutomationControlled',
       '--no-default-browser-check',
@@ -104,17 +132,6 @@ export default {
       '--disable-renderer-backgrounding',
       '--disable-background-timer-throttling',
     ],
-    // LID support configuration
-    whatsappVersion: 'latest',
-    puppeteerOptions: {
-      headless: true,
-      defaultViewport: null,
-      args: [
-        '--disable-features=VizDisplayCompositor',
-        '--no-default-browser-check',
-        '--disable-dev-tools',
-      ],
-    },
     /**
      * Example of configuring the linkPreview generator
      * If you set this to 'null', it will use global servers; however, you have the option to define your own server
@@ -124,6 +141,21 @@ export default {
      * linkPreviewApiServers: [ 'https://www.yourserver.com/wa-js-api-server' ]
      */
     linkPreviewApiServers: null,
+
+    // `latest` is mutable and can drift ahead of the injected WA-JS API.
+    // Operators may override this only with a version present in the pinned
+    // @wppconnect/wa-version catalogue.
+    whatsappVersion: env.WHATSAPP_VERSION || '2.3000.1049703040-alpha',
+    puppeteerOptions: {
+      headless: true,
+      defaultViewport: null,
+      executablePath: env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: [
+        '--disable-features=VizDisplayCompositor',
+        '--no-default-browser-check',
+        '--disable-dev-tools',
+      ],
+    },
 
     /**
      * Set specific whatsapp version
@@ -135,19 +167,19 @@ export default {
     prefix: 'tagone-',
   },
   db: {
-    mongodbDatabase: 'tokens',
-    mongodbCollection: '',
-    mongodbUser: '',
-    mongodbPassword: '',
-    mongodbHost: '',
+    mongodbDatabase: env.MONGODB_DATABASE || 'tokens',
+    mongodbCollection: env.MONGODB_COLLECTION || '',
+    mongodbUser: env.MONGODB_USER || '',
+    mongodbPassword: env.MONGODB_PASSWORD || '',
+    mongodbHost: env.MONGODB_HOST || '',
     mongoIsRemote: true,
-    mongoURLRemote: '',
-    mongodbPort: 27017,
-    redisHost: 'localhost',
-    redisPort: 6379,
-    redisPassword: '',
-    redisDb: 0,
-    redisPrefix: 'docker',
+    mongoURLRemote: env.MONGO_URL_REMOTE || '',
+    mongodbPort: envNumber('MONGODB_PORT', 27017),
+    redisHost: env.REDIS_HOST || 'localhost',
+    redisPort: envNumber('REDIS_PORT', 6379),
+    redisPassword: env.REDIS_PASSWORD || '',
+    redisDb: envNumber('REDIS_DB', 0),
+    redisPrefix: env.REDIS_PREFIX || 'docker',
   },
   aws_s3: {
     region: 'sa-east-1' as any,
